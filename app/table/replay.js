@@ -22,6 +22,9 @@ const setReplaySpot = (() => {
     byId("replay-output").textContent = "";
     byId("chart-controls").hidden = true;
   }
+  function watched(row) {
+    return row.seat_mode ? row.seat_mode === "watch" : row.history.some(line => line.includes("Your bot posts "));
+  }
   function showRecord() {
     clearTrial();
     const item = selected();
@@ -30,8 +33,11 @@ const setReplaySpot = (() => {
     cutoff.value = candidate || record.chart?.K?.offsuit_min_kicker || "7";
     byId("saved-context").textContent = "Hand " + d.hand + " · " + d.position + " · " + d.hole.join(" ") +
       " · " + (d.board.join(" ") || "Preflop") + " · Pot " + d.pot + " · " + d.call_cost + " to call · Stacks " + d.stack + " / " + d.opponent_stack;
-    byId("saved-reason").textContent = "Your move: " + actionLabel(receipt.command,d) + ". " + (receipt.reason || "") +
-      " · Recorded bot: " + actionLabel(record.row.recommendation.command,d);
+    const watching = watched(record.row);
+    byId("saved-reason").textContent = watching
+      ? "Your bot played " + actionLabel(receipt.command,d) + ". " + (receipt.reason ? "Your prediction: " + receipt.reason : "No prediction recorded.")
+      : "Your move: " + actionLabel(receipt.command,d) + ". " + (receipt.reason || "") + " · Recorded bot: " + actionLabel(record.row.recommendation.command,d);
+    byId("alternate-label").textContent = watching ? "Compare the bot’s original move with" : "Compare my original move with";
     byId("saved-history").textContent = history.join(" · ");
     byId("retained-status").textContent = candidate ? "Kept cutoff for this spot: " + candidate : "Original chart · " + (record.row.recommendation.chart_version || "version unavailable");
     const action = byId("replay-action");
@@ -99,7 +105,7 @@ const setReplaySpot = (() => {
       const chart= item.record.chart.K.offsuit_min_kicker;
       byId("replay-output").textContent = "Original chart (" + chart + "): " + actionLabel(result.original.command,d) +
         ". Trial chart (" + cutoff.value + "): " + actionLabel(result.revised.command,d) +
-        ". Compared " + actionLabel(b.alternate,d) + " with your " + actionLabel(b.original,d) + " on " + b.deals +
+        ". Compared " + actionLabel(b.alternate,d) + (watched(item.record.row) ? " with the bot’s " : " with your ") + actionLabel(b.original,d) + " on " + b.deals +
         " matched deals (seed " + b.seed + "). Mean difference " + b.mean_difference.toFixed(2) +
         " chips, standard error " + b.standard_error.toFixed(2) + ". Uniform opponent calls every bet; remaining streets check through.";
       byId("chart-controls").hidden = false;

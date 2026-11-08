@@ -132,6 +132,7 @@ class Table:
         if self.state["comparison_mode"] != "off":
             row = compare(self.state["decision"], receipt)
             row["history"] = self.state["history"].copy()
+            row["seat_mode"] = self.state["encounter"]["seat_mode"]
             self.journal.append(row)
         self.state.update(phase="review", receipt=receipt)
         # The worker may already have emitted the opponent's reply. Read it
