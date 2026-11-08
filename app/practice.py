@@ -73,6 +73,13 @@ def _referee(connection, hands, start_position, seed):
                 send("ack", seat=self.name, hand=self.hand)
                 return engine.CheckAction()
 
+            if state.stacks == [0, 0]:
+                # The referee still expects an action on each remaining street.
+                send("runout", street=state.street, board=list(map(str, state.deck.peek(state.street))),
+                     pot=2 * engine.STARTING_STACK)
+                messages.clear()
+                return engine.CheckAction()
+
             self.decision_id += 1
             active = self.position
             legal = state.legal_actions()
@@ -113,9 +120,14 @@ def _referee(connection, hands, start_position, seed):
             return action
 
     class PracticeGame(engine.Game):
+        def log_round_state(self, players, state):
+            self.running_out = state.stacks == [0, 0]
+            super().log_round_state(players, state)
+
         def log_action(self, name, action, bet_override):
             super().log_action(name, action, bet_override)
-            send("played", text=self.log[-1])
+            if not self.running_out:
+                send("played", text=self.log[-1])
 
     human = Human()
     starter = Starter("Starter", str(ENGINE / "python_skeleton"))
@@ -193,6 +205,8 @@ def _play(contacts):
             print(f"Opponent: {event['opponent']}. Type quit to leave.")
         elif kind == "blinds":
             print(f"Hand {event['hand']}: {event['button']} button posts 1; {event['bb']} bb posts 2.")
+        elif kind == "runout":
+            print("Board:", " ".join(event["board"]))
         elif kind == "played":
             print(event["text"])
         elif kind == "ack":

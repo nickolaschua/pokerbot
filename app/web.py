@@ -74,6 +74,11 @@ class Table:
                 self.state.update(phase="decision", decision={k: event[k] for k in DECISION_FIELDS},
                                   receipt=None)
                 return
+            elif kind == "runout":
+                # Keep the id of the last actual decision for settlement and retry.
+                self.state["decision"].update(board=event["board"], street=event["street"], pot=event["pot"],
+                                              stack=0, opponent_stack=0, my_pip=0, opponent_pip=0,
+                                              legal=[], bounds=None, call_cost=0)
             elif kind == "showdown":
                 self.state["showdown"] = event["opponent"]
             elif kind == "settled":

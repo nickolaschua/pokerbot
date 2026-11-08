@@ -94,3 +94,30 @@ def test_one_commit_per_decision_and_disclosure_after_continue(post_get):
     assert next_hand["decision"]["hand"] == 2 and next_hand["decision"]["position"] == "bb"
     assert next_hand["showdown"] is None and next_hand["settlement"] is None
     assert post_get("end", token)[1]["phase"] == "idle"
+
+
+@pytest.mark.parametrize("opening", ["raise 400", "raise 399"])
+def test_called_all_in_runs_out_without_another_human_decision(post_get, opening):
+    _, start = post_get("start", {"hands": 2, "position": "button"})
+    token = {"session_id": start["session_id"], "id": start["decision"]["id"]}
+
+    def play(command):
+        status, review = post_get("commit", {**token, "command": command, "reason": ""})
+        assert status == 200 and review["phase"] == "review"
+        status, state = post_get("continue", {**token, "phase": "review"})
+        assert status == 200
+        return state
+
+    result = play(opening)
+    if opening == "raise 399":
+        assert result["phase"] == "decision" and result["decision"]["bounds"] == [1, 1]
+        token["id"] = result["decision"]["id"]
+        result = play("raise 1")
+    assert result["phase"] == "settled"
+    assert len(result["decision"]["board"]) == 5
+    assert result["decision"]["pot"] == 800
+    assert result["settlement"]["human_delta"] == 400
+    assert "Human checks" not in result["history"]
+    assert post_get()[1] == result
+    status, next_hand = post_get("continue", {**token, "phase": "settled"})
+    assert status == 200 and next_hand["decision"]["hand"] == 2
