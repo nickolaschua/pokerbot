@@ -35,3 +35,7 @@ A mystery encounter chooses its opponent once for the full session. Open **Oppon
 Look for the session and HTTP tests in `tests/test_web.py`. Run them with `.venv/bin/python -m pytest -q tests/test_web.py` in an environment that permits loopback sockets. Run the comparison checks with `.venv/bin/python -m pytest -q tests/test_comparison.py`.
 
 The [river exercise and optional coach](coach.md) explain the price of a call against different opponent ranges.
+
+The [replay guide](replay.md) covers durable bookmarks, chart trials and paired chip estimates.
+
+Open the [equilibrium exercise](reference.md) from the setup screen to practice a covered river spot and compare it with a different bet size.
