@@ -103,6 +103,13 @@ class Library:
             db.execute("INSERT OR IGNORE INTO spots(id, record) VALUES (?, ?)", (key, json.dumps(record)))
         return {"key": key}
 
+    def get_row(self, key):
+        if not isinstance(key, str):
+            return None
+        with closing(self._open()) as db:
+            saved = db.execute("SELECT record FROM spots WHERE id = ?", (key,)).fetchone()
+        return json.loads(saved[0])["row"] if saved else None
+
     def list(self):
         with closing(self._open()) as db:
             rows = db.execute("SELECT id, record, candidate FROM spots ORDER BY rowid DESC")

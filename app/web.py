@@ -12,7 +12,7 @@ import sys
 from threading import Lock
 from uuid import uuid4
 
-from app import coach
+from app import coach, reference
 from app.replay import Library
 from app.encounter import OPPONENTS, WATCH_MODES, new_encounter, record_action, select_opponent
 from app.comparison import compare, recommend
@@ -26,6 +26,7 @@ FILES = {
     "/table.css": ("table.css", "text/css; charset=utf-8"),
     "/encounter.js": ("encounter.js", "text/javascript; charset=utf-8"),
     "/replay.js": ("replay.js", "text/javascript; charset=utf-8"),
+    "/reference.js": ("reference.js", "text/javascript; charset=utf-8"),
     "/coach.js": ("coach.js", "text/javascript; charset=utf-8"),
     "/table.js": ("table.js", "text/javascript; charset=utf-8"),
 }
@@ -293,7 +294,7 @@ class Handler(BaseHTTPRequestHandler):
                 raise RequestError("Local origin required.", 403)
             if post:
                 if self.path not in ("/api/start", "/api/end", "/api/commit", "/api/continue", "/api/analysis", "/api/explain",
-                                     "/api/bookmark", "/api/replay", "/api/retain", "/api/step", "/api/watch-mode", "/api/read", "/api/reveal"):
+                                     "/api/reference", "/api/bookmark", "/api/replay", "/api/retain", "/api/step", "/api/watch-mode", "/api/read", "/api/reveal"):
                     raise RequestError("Unknown endpoint.", 404)
                 if self.headers.get_content_type() != "application/json":
                     raise RequestError("JSON required.", 415)
@@ -310,7 +311,22 @@ class Handler(BaseHTTPRequestHandler):
                 if not isinstance(body, dict):
                     raise RequestError("Expected a JSON object.")
                 operation = self.path[5:]
-                if operation == "bookmark":
+                if operation == "reference":
+                    if "fixture" in body:
+                        if body.get("prediction") not in ("call","fold"):
+                            raise RequestError("Commit a prediction first.")
+                        try:
+                            row = reference.exercise(body["fixture"])
+                        except ValueError as exc:
+                            raise RequestError(str(exc)) from exc
+                    elif "key" in body:
+                        row = self.server.table.library.get_row(body["key"])
+                        if row is None:
+                            raise RequestError("Saved decision unavailable.", 404)
+                    else:
+                        row = self.server.table.visible_row(body)
+                    self._reply(200, reference.review(row, body.get("range")))
+                elif operation == "bookmark":
                     row = self.server.table.visible_row(body)
                     self._reply(200, self.server.table.library.save(body["session_id"], row))
                 elif operation in ("replay", "retain"):
