@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Poker Practice</title><link rel="stylesheet" href="/table.css"><script defer src="/coach.js"></script><script defer src="/encounter.js"></script><script defer src="/table.js"></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Poker Practice</title><link rel="stylesheet" href="/table.css"><script defer src="/coach.js"></script><script defer src="/encounter.js"></script><script defer src="/replay.js"></script><script defer src="/table.js"></script></head>
 <body>
 <header><div class="mast"><span class="brand-suit" aria-hidden="true">♠</span><h1>Poker Practice</h1></div><span class="format">Heads-up <i>·</i> No-limit Hold’em</span></header>
 <main>
@@ -26,6 +26,7 @@
 <p id="player-reason"></p><p id="policy-reason"></p>
 <p id="comparison-rule"></p>
 <small id="policy-source"></small>
+<button type="button" id="bookmark-move">Save this spot</button><span id="bookmark-status" role="status"></span>
 </section>
 <section id="ev-coach" hidden>
 <button type="button" id="open-math">Show EV math</button>
@@ -55,6 +56,18 @@
 <label for="confidence">Confidence</label><select id="confidence"><option value="unsure">Unsure</option><option value="medium">Medium</option><option value="high">High</option></select>
 <button id="save-read" type="button">Save read</button><span id="read-status" role="status"></span></details>
 <button id="reveal-identity" type="button" hidden>Reveal mystery opponent</button>
+<details id="saved-library"><summary>Saved decisions</summary>
+<p id="library-status" role="status"></p>
+<div id="library-editor" hidden>
+<label for="bookmark-select">Saved spot</label><select id="bookmark-select"></select>
+<p id="saved-context"></p><p id="saved-reason"></p><p id="saved-history"></p>
+<label for="replay-cutoff">Trial offsuit king cutoff</label><select id="replay-cutoff"></select>
+<label for="replay-action">Compare my original move with</label><select id="replay-action"></select>
+<div id="replay-sizing" hidden><label for="replay-size">Raise to (chips)</label><input type="number" step="1" id="replay-size"></div>
+<button type="button" id="run-replay">Run paired replay</button>
+<p id="replay-output" role="status"></p>
+<div id="chart-controls" hidden><button type="button" id="keep-chart">Keep trial chart</button><button type="button" id="drop-chart">Discard trial chart</button></div>
+<p id="retained-status" role="status"></p></div></details>
 <button class="quiet" id="end" hidden>End session</button>
 </aside></main>
 </body></html>

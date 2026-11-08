@@ -179,6 +179,7 @@ function render() {
     el("continue").textContent=settlement.hand===state.hands ? "Finish session" : "Next hand";
   }
   drawEncounter(state, row);
+  setReplaySpot(state, row);
 }
 
 async function request(path, data) {
