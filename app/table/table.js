@@ -178,6 +178,7 @@ function render() {
     el("receipt").textContent="This hand · "+chipResult(settlement.human_delta)+"\nSession · "+chipResult(settlement.human_total);
     el("continue").textContent=settlement.hand===state.hands ? "Finish session" : "Next hand";
   }
+  drawEncounter(state, row);
 }
 
 async function request(path, data) {
@@ -208,7 +209,7 @@ async function request(path, data) {
   }
 }
 
-el("start").onsubmit=e=>{e.preventDefault();request("start",{hands:Number(el("hands").value),position:el("position").value,comparison_mode:el("comparison-mode").value});};
+el("start").onsubmit=e=>{e.preventDefault();request("start",{hands:Number(el("hands").value),position:el("position").value,comparison_mode:el("comparison-mode").value,opponent:el("opponent").value,seat_mode:el("seat-mode").value,watch_mode:el("watch-mode").value});};
 el("spot-select").onchange = () => {
   window.history.replaceState({session:state.session_id, spot:el("spot-select").value}, "");
   render();

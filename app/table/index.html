@@ -1,15 +1,15 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Poker Practice</title><link rel="stylesheet" href="/table.css"><script defer src="/coach.js"></script><script defer src="/table.js"></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Poker Practice</title><link rel="stylesheet" href="/table.css"><script defer src="/coach.js"></script><script defer src="/encounter.js"></script><script defer src="/table.js"></script></head>
 <body>
 <header><div class="mast"><span class="brand-suit" aria-hidden="true">♠</span><h1>Poker Practice</h1></div><span class="format">Heads-up <i>·</i> No-limit Hold’em</span></header>
 <main>
 <section class="game" aria-label="Poker table">
 <div class="game-title"><h2>Practice table</h2><span id="hand-count"></span></div>
 <div class="felt">
-<div class="seat opponent"><div class="cards" id="opp-cards" aria-label="Opponent cards"></div><strong>MIT starter <span class="dealer" id="opp-dealer" hidden>D</span></strong><span id="opp-stack"></span></div>
+<div class="seat opponent"><div class="cards" id="opp-cards" aria-label="Opponent cards"></div><strong><span id="opponent-name">MIT starter</span> <span class="dealer" id="opp-dealer" hidden>D</span></strong><span id="opp-stack"></span></div>
 <div class="middle"><div id="pot"></div><div class="cards board" id="board" aria-label="Community cards"></div><small id="street"></small></div>
-<div class="seat hero"><div class="cards" id="hole" aria-label="Your cards"></div><strong>You <span class="dealer" id="my-dealer" hidden>D</span></strong><span id="my-stack"></span></div>
+<div class="seat hero"><div class="cards" id="hole" aria-label="Your cards"></div><strong><span id="hero-name">You</span> <span class="dealer" id="my-dealer" hidden>D</span></strong><span id="my-stack"></span></div>
 </div>
 <div class="facts"><span>Blinds <b>1 / 2</b></span><span>Starting stack <b>400 chips</b></span></div>
 <details id="history-panel"><summary>Hand history</summary><ol id="history"></ol></details>
@@ -39,12 +39,22 @@
 <button type="button" id="ask-coach">Explain this decision</button>
 <p id="coach-text" role="status"></p></div>
 </section>
-<form id="start"><label for="position">Starting position</label><select id="position"><option value="button">Button · small blind</option><option value="bb">Big blind</option></select><label for="hands">Hands to play</label><input id="hands" type="number" min="1" max="100" value="10" required><label for="comparison-mode">Compare with my bot</label><select id="comparison-mode"><option value="deferred">After the session</option><option value="immediate">After each commitment</option><option value="off">Off</option></select><button class="primary" type="submit">Start session</button></form>
+<form id="start"><label for="opponent">Opponent</label><select id="opponent"><option value="starter">MIT starter</option><option value="equity">Equity bot</option><option value="random">Random bot</option><option value="check_fold">Check/fold bot</option><option value="mystery">Mystery opponent</option></select>
+<label for="seat-mode">Your seat</label><select id="seat-mode"><option value="human">Play my hand</option><option value="watch">Watch my chart bot</option></select>
+<div id="watch-setup" hidden><label for="watch-mode">Watch pace</label><select id="watch-mode"><option value="step">Step each decision</option><option value="continuous">Continuous</option><option value="river_raise">Pause at a river raise</option></select></div>
+<label for="position">Starting position</label><select id="position"><option value="button">Button · small blind</option><option value="bb">Big blind</option></select><label for="hands">Hands to play</label><input id="hands" type="number" min="1" max="100" value="10" required><label for="comparison-mode">Compare with my bot</label><select id="comparison-mode"><option value="deferred">After the session</option><option value="immediate">After each commitment</option><option value="off">Off</option></select><button class="primary" type="submit">Start session</button></form>
 <form id="play" hidden><fieldset><legend>Your move</legend><div id="actions" class="choices"></div></fieldset>
 <div id="sizing" hidden><label id="amount-label" for="amount">Raise to (chips)</label><input id="amount" type="number" step="1"><div class="presets" id="presets"></div><p id="cost"></p></div>
 <label for="reason">Your reasoning <small>(optional)</small></label><textarea id="reason" maxlength="1000" rows="3" placeholder="What do you expect the starter to do?"></textarea>
 <button type="submit" class="primary" id="commit">Commit move</button></form>
 <div id="review" hidden><div id="receipt"></div><button class="primary" id="continue">Continue</button></div>
+<section id="watch-controls" hidden><label for="live-pace">Playback</label><select id="live-pace"><option value="step">Step each decision</option><option value="continuous">Continuous</option><option value="river_raise">Pause at a river raise</option></select>
+<div id="predict-controls"><label for="prediction">Predict your bot’s action</label><input id="prediction" maxlength="1000"><button id="watch-step" type="button">Play bot move</button></div></section>
+<details id="encounter-reads" hidden><summary>Opponent reads</summary><p id="observed"></p>
+<label for="read-note">My read</label><textarea id="read-note" maxlength="1000"></textarea>
+<label for="confidence">Confidence</label><select id="confidence"><option value="unsure">Unsure</option><option value="medium">Medium</option><option value="high">High</option></select>
+<button id="save-read" type="button">Save read</button><span id="read-status" role="status"></span></details>
+<button id="reveal-identity" type="button" hidden>Reveal mystery opponent</button>
 <button class="quiet" id="end" hidden>End session</button>
 </aside></main>
 </body></html>

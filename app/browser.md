@@ -6,7 +6,7 @@ Complete the [local setup](../README.md#local-setup), then run this command from
 .venv/bin/python -m app.web --port 8000
 ```
 
-Open [the local table](http://127.0.0.1:8000), choose a starting seat and hand count, and start the session. MIT's check/call bot plays the other seat. The table rotates the button each hand.
+Open [the local table](http://127.0.0.1:8000), choose a starting seat and hand count, and start the session. The default opponent is MIT’s socket-connected check/call starter. You can also select a local equity, random or check/fold policy. The table rotates the button each hand.
 
 Select an action. For a raise, enter the total chips you want to have contributed on this street. The preview displays the extra chips you will spend. Optionally explain your thinking, then choose **Commit move**. The review holds the position you saw when you chose. **Continue** reveals the opponent's response and the next decision or payout.
 
@@ -24,8 +24,14 @@ For a repeatable example, launch with `--seed 72`, choose the button, play one h
 
 The journal lives on the local server. Refreshing the browser preserves it. Choosing **End session** early discards the session, including its journal. Starting another session or stopping the server also clears it.
 
+## Watch a hand or read an opponent
+
+Choose **Watch my chart bot** to let your policy play the near seat. Step through each decision, run continuously, or pause when your bot faces a river raise. The pause happens before the bot acts. Write a prediction and choose **Play bot move** to see the response. Launch the server with `--seed 457`, pick the equity opponent, start on the button and select the river-raise pause for a repeatable first-hand example.
+
+A mystery encounter chooses its opponent once for the full session. Open **Opponent reads** to record a note and confidence level. The counters show folds out of opportunities facing a bet, and bets or raises out of opportunities to raise. Choose **Finish session**, then **Reveal mystery opponent**, to compare your read with the actual opponent. Reads persist across refresh while the server session is active.
+
 ## Reviewing the change
 
-Look for the session and HTTP tests in `tests/test_web.py`. Run them with `.venv/bin/python -m pytest -q tests/test_web.py` in an environment that permits loopback sockets. Run the comparison checks with `.venv/bin/python -m pytest -q tests/test_comparison.py`. Solver comparisons and EV coaching belong to later milestones.
+Look for the session and HTTP tests in `tests/test_web.py`. Run them with `.venv/bin/python -m pytest -q tests/test_web.py` in an environment that permits loopback sockets. Run the comparison checks with `.venv/bin/python -m pytest -q tests/test_comparison.py`.
 
 The [river exercise and optional coach](coach.md) explain the price of a call against different opponent ranges.
