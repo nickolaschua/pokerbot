@@ -67,3 +67,8 @@ def test_optional_provider_grounding_and_timeout(monkeypatch, reply, expected):
     result = coach.explain(math, coach.RIVER_EXERCISE, {"command":"fold","reason":"I expect a flush"}, opener=provider)
     assert result["source"] == expected
     assert "-11.8 chips" in result["text"]
+
+
+def test_one_chip_price_uses_singular():
+    math = coach.analyze({**coach.RIVER_EXERCISE, "call_cost": 1}, "uniform")
+    assert coach.coach_facts(math)["price"].startswith("Calling 1 chip into ")

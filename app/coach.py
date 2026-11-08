@@ -57,7 +57,8 @@ def coach_facts(math):
     pot, cost, equity, ev = (math[k] for k in ("pot", "cost", "equity", "call_ev"))
     facts = {"range": math["assumption"], "equity": f"Your modeled share of the pot is {equity:.1%}."}
     if cost:
-        facts["price"] = f"Calling {cost} chips into {pot} requires {math['break_even']:.1%} equity."
+        unit = "chip" if cost == 1 else "chips"
+        facts["price"] = f"Calling {cost} {unit} into {pot} requires {math['break_even']:.1%} equity."
         if abs(ev) < 1e-9:
             verdict = "Calling and folding break even against each other."
         else:
