@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Poker Practice</title><link rel="stylesheet" href="/table.css"><script defer src="/table.js"></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Poker Practice</title><link rel="stylesheet" href="/table.css"><script defer src="/coach.js"></script><script defer src="/table.js"></script></head>
 <body>
 <header><div class="mast"><span class="brand-suit" aria-hidden="true">♠</span><h1>Poker Practice</h1></div><span class="format">Heads-up <i>·</i> No-limit Hold’em</span></header>
 <main>
@@ -26,6 +26,18 @@
 <p id="player-reason"></p><p id="policy-reason"></p>
 <p id="comparison-rule"></p>
 <small id="policy-source"></small>
+</section>
+<section id="ev-coach" hidden>
+<button type="button" id="open-math">Show EV math</button>
+<details id="river-drill"><summary>Practice the saved river</summary>
+<p>You hold K♣ 5♠ on 5♥ J♥ 5♦ Q♥ 3♥. The pot is 480 after a raise. It costs 160 to call. What would you do?</p>
+<div class="choices"><button type="button" id="drill-call">Call 160</button><button type="button" id="drill-fold">Fold</button></div></details>
+<div id="math-panel" hidden><h3 id="math-title">Call EV</h3>
+<label for="ev-range">Opponent range</label>
+<select id="ev-range"><option value="uniform">Uniform random hand</option><option value="strong">Strongest of three hands</option></select>
+<p id="math-result" role="status"></p><p id="math-assumption"></p>
+<button type="button" id="ask-coach">Explain this decision</button>
+<p id="coach-text" role="status"></p></div>
 </section>
 <form id="start"><label for="position">Starting position</label><select id="position"><option value="button">Button · small blind</option><option value="bb">Big blind</option></select><label for="hands">Hands to play</label><input id="hands" type="number" min="1" max="100" value="10" required><label for="comparison-mode">Compare with my bot</label><select id="comparison-mode"><option value="deferred">After the session</option><option value="immediate">After each commitment</option><option value="off">Off</option></select><button class="primary" type="submit">Start session</button></form>
 <form id="play" hidden><fieldset><legend>Your move</legend><div id="actions" class="choices"></div></fieldset>

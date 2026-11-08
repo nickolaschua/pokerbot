@@ -27,3 +27,5 @@ The journal lives on the local server. Refreshing the browser preserves it. Choo
 ## Reviewing the change
 
 Look for the session and HTTP tests in `tests/test_web.py`. Run them with `.venv/bin/python -m pytest -q tests/test_web.py` in an environment that permits loopback sockets. Run the comparison checks with `.venv/bin/python -m pytest -q tests/test_comparison.py`. Solver comparisons and EV coaching belong to later milestones.
+
+The [river exercise and optional coach](coach.md) explain the price of a call against different opponent ranges.

@@ -416,3 +416,9 @@ li {
 #player-reason {
   white-space: pre-wrap;
 }
+
+#ev-coach { margin: 1rem 0; border-block: 1px solid var(--edge); padding-block: .8rem; }
+#ev-coach details { border: 0; }
+#math-panel h3 { margin-bottom: .5rem; }
+#ev-range { display: block; max-width: 100%; }
+#math-result, #math-assumption, #coach-text { line-height: 1.5; }
