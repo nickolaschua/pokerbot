@@ -1,0 +1,7 @@
+# Replay a saved decision
+
+Choose **Save this spot** on a visible decision comparison. Open **Saved decisions** during review or between sessions to inspect the original cards, price, stacks, history, reasoning and recommendation. Bookmarks survive a server restart. The default library is `results/practice-bookmarks.sqlite3` in the repository. Set `POKER_BOOKMARK_DB` to another file before launching the server to use a separate library.
+
+Choose a trial offsuit king cutoff, then **Run paired replay**. The app first runs the saved chart through the versioned policy using its original public decision as the RNG input. If the version or output no longer matches, the app keeps the original record available and labels it. The trial runs on a copy. **Keep trial chart** retains this cutoff for that saved spot. **Discard trial chart** restores the original cutoff. The live chart stays in `pokerbot/charts/button_open_2_5bb.csv`.
+
+The paired experiment compares the move you recorded with the trial policy or an alternate legal move. Both lines draw the same 512 opponent holdings and boards from seed 781. The model gives the opponent a uniform hand, calls every bet, and checks through the remaining streets. The result is the mean incremental chip difference (alternative minus your move), with the standard error of the paired differences. The recorded opponent, private cards, future board and session score do not enter the simulation.

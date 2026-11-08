@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Poker Practice</title><link rel="stylesheet" href="/table.css"><script defer src="/coach.js"></script><script defer src="/encounter.js"></script><script defer src="/reference.js"></script><script defer src="/replay.js"></script><script defer src="/table.js"></script></head>
+<body>
+<header><div class="mast"><span class="brand-suit" aria-hidden="true">♠</span><h1>Poker Practice</h1></div><span class="format">Heads-up <i>·</i> No-limit Hold’em</span></header>
+<main>
+<section class="game" aria-label="Poker table">
+<div class="game-title"><h2>Practice table</h2><span id="hand-count"></span></div>
+<div class="felt">
+<div class="seat opponent"><div class="cards" id="opp-cards" aria-label="Opponent cards"></div><strong><span id="opponent-name">MIT starter</span> <span class="dealer" id="opp-dealer" hidden>D</span></strong><span id="opp-stack"></span></div>
+<div class="middle"><div id="pot"></div><div class="cards board" id="board" aria-label="Community cards"></div><small id="street"></small></div>
+<div class="seat hero"><div class="cards" id="hole" aria-label="Your cards"></div><strong><span id="hero-name">You</span> <span class="dealer" id="my-dealer" hidden>D</span></strong><span id="my-stack"></span></div>
+</div>
+<div class="facts"><span>Blinds <b>1 / 2</b></span><span>Starting stack <b>400 chips</b></span></div>
+<details id="history-panel"><summary>Hand history</summary><ol id="history"></ol></details>
+</section>
+<aside><h2 id="panel-title" tabindex="-1">Take a seat</h2><p id="status" role="status"></p><p id="error" role="alert" hidden></p>
+<section id="comparison" aria-labelledby="comparison-title" hidden>
+<h3 id="comparison-title">Your bot’s comparison</h3>
+<div id="spot-picker" hidden><label for="spot-select">Review a decision</label><select id="spot-select"></select></div>
+<p id="spot-context"></p>
+<div class="comparison-moves">
+<div><small>Your move</small><strong id="human-choice"></strong></div>
+<div><small>Your bot</small><strong id="bot-choice"></strong></div>
+</div>
+<p id="player-reason"></p><p id="policy-reason"></p>
+<p id="comparison-rule"></p>
+<small id="policy-source"></small>
+<button type="button" id="bookmark-move">Save this spot</button><span id="bookmark-status" role="status"></span>
+</section>
+<section id="ev-coach" hidden>
+<button type="button" id="open-math">Show EV math</button>
+<details id="river-drill"><summary>Practice the saved river</summary>
+<p>You hold K♣ 5♠ on 5♥ J♥ 5♦ Q♥ 3♥. The pot is 480 after a raise. It costs 160 to call. What would you do?</p>
+<div class="choices"><button type="button" id="drill-call">Call 160</button><button type="button" id="drill-fold">Fold</button></div></details>
+<div id="math-panel" hidden><h3 id="math-title">Call EV</h3>
+<label for="ev-range">Opponent range</label>
+<select id="ev-range"><option value="uniform">Uniform random hand</option><option value="strong">Strongest of three hands</option></select>
+<p id="math-result" role="status"></p><p id="math-assumption"></p>
+<button type="button" id="ask-coach">Explain this decision</button>
+<p id="coach-text" role="status"></p></div>
+</section>
+<section id="reference-panel" hidden>
+<details id="reference-drill"><summary>Equilibrium river exercise</summary>
+<label for="reference-variant">River spot</label><select id="reference-variant"><option value="covered">Half-pot jam</option><option value="size">Smaller bet</option><option value="stack">Deeper stacks</option><option value="history">Different betting line</option></select>
+<p id="reference-situation"></p><div class="choices"><button id="reference-call" type="button">I would call</button><button id="reference-fold" type="button">I would fold</button></div></details>
+<button id="reference-live" type="button" hidden>Check equilibrium coverage</button>
+<div id="reference-review" hidden><h3 id="reference-heading" tabindex="-1">Reference review</h3>
+<label for="reference-range">Assumed opponent range before the bet</label><select id="reference-range"><option value="equal_polar">Equal value and bluff holdings</option><option value="uniform">All legal holdings</option></select>
+<div id="reference-output" role="status"></div><a id="reference-source" hidden target="_blank" rel="noopener noreferrer"></a></div></section>
+<form id="start"><label for="opponent">Opponent</label><select id="opponent"><option value="starter">MIT starter</option><option value="equity">Equity bot</option><option value="random">Random bot</option><option value="check_fold">Check/fold bot</option><option value="mystery">Mystery opponent</option></select>
+<label for="seat-mode">Your seat</label><select id="seat-mode"><option value="human">Play my hand</option><option value="watch">Watch my chart bot</option></select>
+<div id="watch-setup" hidden><label for="watch-mode">Watch pace</label><select id="watch-mode"><option value="step">Step each decision</option><option value="continuous">Continuous</option><option value="river_raise">Pause at a river raise</option></select></div>
+<label for="position">Starting position</label><select id="position"><option value="button">Button · small blind</option><option value="bb">Big blind</option></select><label for="hands">Hands to play</label><input id="hands" type="number" min="1" max="100" value="10" required><label for="comparison-mode">Compare with my bot</label><select id="comparison-mode"><option value="deferred">After the session</option><option value="immediate">After each commitment</option><option value="off">Off</option></select><button class="primary" type="submit">Start session</button></form>
+<form id="play" hidden><fieldset><legend>Your move</legend><div id="actions" class="choices"></div></fieldset>
+<div id="sizing" hidden><label id="amount-label" for="amount">Raise to (chips)</label><input id="amount" type="number" step="1"><div class="presets" id="presets"></div><p id="cost"></p></div>
+<label for="reason">Your reasoning <small>(optional)</small></label><textarea id="reason" maxlength="1000" rows="3" placeholder="What do you expect the starter to do?"></textarea>
+<button type="submit" class="primary" id="commit">Commit move</button></form>
+<div id="review" hidden><div id="receipt"></div><button class="primary" id="continue">Continue</button></div>
+<section id="watch-controls" hidden><label for="live-pace">Playback</label><select id="live-pace"><option value="step">Step each decision</option><option value="continuous">Continuous</option><option value="river_raise">Pause at a river raise</option></select>
+<div id="predict-controls"><label for="prediction">Predict your bot’s action</label><input id="prediction" maxlength="1000"><button id="watch-step" type="button">Play bot move</button></div></section>
+<details id="encounter-reads" hidden><summary>Opponent reads</summary><p id="observed"></p>
+<label for="read-note">My read</label><textarea id="read-note" maxlength="1000"></textarea>
+<label for="confidence">Confidence</label><select id="confidence"><option value="unsure">Unsure</option><option value="medium">Medium</option><option value="high">High</option></select>
+<button id="save-read" type="button">Save read</button><span id="read-status" role="status"></span></details>
+<button id="reveal-identity" type="button" hidden>Reveal mystery opponent</button>
+<details id="saved-library"><summary>Saved decisions</summary>
+<p id="library-status" role="status"></p>
+<div id="library-editor" hidden>
+<label for="bookmark-select">Saved spot</label><select id="bookmark-select"></select>
+<button id="reference-bookmark" type="button">Check saved spot coverage</button>
+<p id="saved-context"></p><p id="saved-reason"></p><p id="saved-history"></p>
+<label for="replay-cutoff">Trial offsuit king cutoff</label><select id="replay-cutoff"></select>
+<label id="alternate-label" for="replay-action">Compare my original move with</label><select id="replay-action"></select>
+<div id="replay-sizing" hidden><label for="replay-size">Raise to (chips)</label><input type="number" step="1" id="replay-size"></div>
+<button type="button" id="run-replay">Run paired replay</button>
+<p id="replay-output" role="status"></p>
+<div id="chart-controls" hidden><button type="button" id="keep-chart">Keep trial chart</button><button type="button" id="drop-chart">Discard trial chart</button></div>
+<p id="retained-status" role="status"></p></div></details>
+<button class="quiet" id="end" hidden>End session</button>
+</aside></main>
+</body></html>

@@ -1,0 +1,9 @@
+# Review a constrained river equilibrium
+
+From the practice table, open **Equilibrium river exercise**, choose **Half-pot jam** and predict a call or fold. The published half-street clairvoyance game has two bettor types. At the start, each type is equally likely. Checking ends the hand at showdown. The winning type always bets. The losing type chooses between betting and checking. The defender can call or fold. The local adapter evaluates the equilibrium formulas in [Ganzfried and Sandholm, Tartanian5, page 4](https://www.cs.cmu.edu/~sandholm/Tartanian_ACPC12_CR.pdf).
+
+In the covered spot, your K♣ 5♠ beats 7♠ 2♦ and loses to A♥ 2♥. The pot starts the river at 400 chips. Each player has 200 behind. The big blind bets 200. When you call two-thirds of the time, the bluff's return is (1/3 × 400) − (2/3 × 200) = 0 chips. When the bettor bluffs one-third of its losing hands, one in four bets is a bluff. Calling then earns (1/4 × 600) − (3/4 × 200) = 0 chips. Folding also adds zero. The frequencies describe repeated decisions within these rules.
+
+The exercise includes different starting stacks, a smaller river bet and another betting line. Each has its own publicly visible context. An unsupported spot opens the ordinary range-model analysis. To inspect an actual decision, choose **Check equilibrium coverage** in a committed comparison or **Check saved spot coverage** in a bookmark. For live and saved decisions, select the range assumption explicitly. Compatibility requires the same public game, spot and allowed actions plus the restricted betting and range assumptions shown in the reference.
+
+The adapter runs locally using exact fractions. The source revision, ranges and betting model accompany covered results. The bundled reference uses no licensed strategy tables, remote solver runtime or paid API. The optional language coach has a separate configuration.

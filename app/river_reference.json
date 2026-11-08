@@ -1,0 +1,7 @@
+{
+  "revision": "half-street-river/1",
+  "source": "Ganzfried & Sandholm, Tartanian5, p. 4 (2012)",
+  "url": "https://www.cs.cmu.edu/~sandholm/Tartanian_ACPC12_CR.pdf",
+  "range": "Equal prior weight on A♥ 2♥ (value) and 7♠ 2♦ (bluff).",
+  "tree": "Big blind can check to showdown or bet half pot all-in. Button can call or fold. One river decision, no rake."
+}

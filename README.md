@@ -5,6 +5,8 @@ standard heads-up Texas Hold'em engine, and improve it through measured experime
 
 ## Start here
 
+After local setup, run `.venv/bin/python -m app.web --port 8000` and open [the practice table](http://127.0.0.1:8000/). The [browser guide](app/browser.md) covers playing, watching your bot and reviewing decisions.
+
 - [Learning plan](docs/learning-plan.md): poker, math, and Python taught together through exercises.
 - [Language decision](docs/language.md): Python first; when C++ or Rust makes sense.
 - [Architecture and roadmap](docs/roadmap.md): what exists and what to build next.
