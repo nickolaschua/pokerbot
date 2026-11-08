@@ -11,6 +11,7 @@ import signal
 import sys
 import tempfile
 
+from pokerbot.strategy import Observation, decide
 from scripts.bootstrap_engine import ENGINE, verify_engine
 
 
@@ -40,7 +41,7 @@ def _validate_action(engine, command, state):
     return action()
 
 
-def _referee(connection, hands, start_position, seed):
+def _referee(connection, hands, start_position, seed, opponent, mystery, watch):
     # Only the worker changes directory or configures the engine's deck.
     import engine
     if seed is not None:
@@ -119,43 +120,86 @@ def _referee(connection, hands, start_position, seed):
                 send("ack", seat=self.name, hand=human.hand)
             return action
 
+    class LocalOpponent:
+        bankroll = 0
+        name = "Opponent"
+
+        def __init__(self):
+            self.rng = random.Random(None if seed is None else f"opponent:{seed}")
+
+        def query(self, state, messages, log):
+            messages.clear()
+            if isinstance(state, engine.TerminalState):
+                send("ack", seat=self.name, hand=human.hand)
+                return engine.CheckAction()
+            active = state.button % 2
+            legal = state.legal_actions()
+            obs = Observation(
+                hole=tuple(map(str, state.hands[active])), board=tuple(map(str, state.deck.peek(state.street))),
+                pot=2 * engine.STARTING_STACK - sum(state.stacks),
+                call_cost=state.pips[1 - active] - state.pips[active], my_pip=state.pips[active],
+                legal=frozenset(action.__name__[:-6].lower() for action in legal),
+                raise_bounds=state.raise_bounds() if engine.RaiseAction in legal else None,
+                button_open=state.street == 0 and state.button == 0)
+            move, amount, _ = decide(obs, opponent, self.rng)
+            return _validate_action(engine, f"raise {amount}" if move == "raise" else move, state)
+
     class PracticeGame(engine.Game):
         def log_round_state(self, players, state):
             self.running_out = state.stacks == [0, 0]
+            self.current = state
             super().log_round_state(players, state)
 
         def log_action(self, name, action, bet_override):
             super().log_action(name, action, bet_override)
             if not self.running_out:
-                send("played", text=self.log[-1])
+                legal = self.current.legal_actions()
+                send("played", text=self.log[-1], opponent=(name == starter.name),
+                     facing_bet=engine.CallAction in legal, may_raise=engine.RaiseAction in legal,
+                     action=type(action).__name__[:-6].lower())
 
     human = Human()
-    starter = Starter("Starter", str(ENGINE / "python_skeleton"))
+    human.name = "Your bot" if watch else "Human"
+    starter = (Starter("Opponent" if mystery else "Starter", str(ENGINE / "python_skeleton"))
+               if opponent == "starter" else LocalOpponent())
     game = PracticeGame()
     try:
-        starter.build()
-        if starter.commands is None:
-            raise RuntimeError("MIT starter commands missing")
-        starter.commands["run"] = [sys.executable, "player.py"]
-        starter.run()
-        if starter.socketfile is None:
-            raise RuntimeError("MIT starter did not connect; local socket access is required")
-        send("ready", opponent="MIT Python check/call starter")
+        if isinstance(starter, Starter):
+            starter.build()
+            if starter.commands is None:
+                raise RuntimeError("MIT starter commands missing")
+            starter.commands["run"] = [sys.executable, "player.py"]
+            starter.run()
+            if starter.socketfile is None:
+                raise RuntimeError("MIT starter did not connect; local socket access is required")
+        send("ready", opponent="Mystery opponent" if mystery else ("MIT Python check/call starter" if opponent == "starter" else opponent))
         for hand in range(1, hands + 1):
             human.hand = hand
             human.position = ((start_position == "bb") + hand - 1) % 2
             seats = (human, starter) if human.position == 0 else (starter, human)
             send("blinds", hand=hand, button=seats[0].name, bb=seats[1].name)
             before = human.bankroll
+            previous_id = human.decision_id
             game.run_round(seats)
+            if human.decision_id == previous_id:
+                # The button can fold before the big blind ever receives a turn.
+                human.decision_id += 1
+                state = game.current
+                active = human.position
+                send("unplayed", id=human.decision_id, hand=hand, position=("button", "bb")[active],
+                     street=0, hole=list(map(str, state.hands[active])), board=[], pot=sum(state.pips),
+                     stack=state.stacks[active], opponent_stack=state.stacks[1-active],
+                     my_pip=state.pips[active], opponent_pip=state.pips[1-active], call_cost=0,
+                     legal=[], bounds=None)
             send("settled", hand=hand, human_delta=human.bankroll - before,
                  human_total=human.bankroll, starter_total=starter.bankroll)
             game.log.clear()
     finally:
-        starter.stop()
+        if isinstance(starter, Starter):
+            starter.stop()
 
 
-def _worker(connection, hands, position, seed):
+def _worker(connection, hands, position, seed, opponent, mystery, watch):
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     try:
         verify_engine()
@@ -163,7 +207,7 @@ def _worker(connection, hands, position, seed):
         with tempfile.TemporaryDirectory(prefix="poker-practice-") as scratch:
             os.chdir(scratch)
             try:
-                _referee(connection, hands, position, seed)
+                _referee(connection, hands, position, seed, opponent, mystery, watch)
             finally:
                 os.chdir(Path(__file__).resolve().parent)
         connection.send({"type": "complete"})
@@ -176,13 +220,13 @@ def _worker(connection, hands, position, seed):
 
 
 @contextmanager
-def practice_session(hands, position="button", seed=None):
+def practice_session(hands, position="button", seed=None, opponent="starter", mystery=False, watch=False):
     """Yield a local connection: recv public events, send (decision ID, command)."""
     if type(hands) is not int or hands < 1 or position not in ("button", "bb"):
         raise ValueError("expected a positive hand count and position button or bb")
     ctx = multiprocessing.get_context("spawn")
     client, worker = ctx.Pipe()
-    process = ctx.Process(target=_worker, args=(worker, hands, position, seed))
+    process = ctx.Process(target=_worker, args=(worker, hands, position, seed, opponent, mystery, watch))
     process.start()
     worker.close()
     try:

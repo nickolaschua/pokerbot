@@ -11,7 +11,7 @@ CHART_VERSION = hashlib.sha256(json.dumps(BUTTON_OPEN, sort_keys=True).encode())
 SIZE_THRESHOLD = 2  # One big blind in the pinned game.
 
 
-def compare(decision, receipt):
+def recommend(decision):
     bounds = decision["bounds"]
     obs = Observation(
         hole=tuple(decision["hole"]), board=tuple(decision["board"]), pot=decision["pot"],
@@ -30,9 +30,16 @@ def compare(decision, receipt):
     else:
         detail["opponent_range"] = "uniform"
     command = f"raise {amount}" if action == "raise" else action
+    return {"command": command, "diagnostics": detail, "chart_version": CHART_VERSION}
+
+
+def compare(decision, receipt):
+    recommendation = recommend(decision)
+    parts = recommendation["command"].split()
+    action = parts[0]
     words = receipt["command"].split()
     disagrees = (words[0] != action or
-                 (action == "raise" and abs(int(words[1]) - amount) >= SIZE_THRESHOLD))
+                 (action == "raise" and abs(int(words[1]) - int(parts[1])) >= SIZE_THRESHOLD))
     return {"decision": deepcopy(decision), "receipt": receipt.copy(),
-            "recommendation": {"command": command, "diagnostics": detail, "chart_version": CHART_VERSION},
+            "recommendation": recommendation,
             "disagrees": disagrees}

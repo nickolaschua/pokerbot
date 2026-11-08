@@ -13,7 +13,8 @@ from threading import Lock
 from uuid import uuid4
 
 from app import coach
-from app.comparison import compare
+from app.encounter import OPPONENTS, WATCH_MODES, new_encounter, record_action, select_opponent
+from app.comparison import compare, recommend
 from app.practice import practice_session
 
 
@@ -22,6 +23,7 @@ FILES = {
     "/": ("index.html", "text/html; charset=utf-8"),
     "/index.html": ("index.html", "text/html; charset=utf-8"),
     "/table.css": ("table.css", "text/css; charset=utf-8"),
+    "/encounter.js": ("encounter.js", "text/javascript; charset=utf-8"),
     "/coach.js": ("coach.js", "text/javascript; charset=utf-8"),
     "/table.js": ("table.js", "text/javascript; charset=utf-8"),
 }
@@ -49,7 +51,8 @@ class Table:
         self.pipe = None
         self.state = {"phase": "idle", "session_id": None, "decision": None, "receipt": None,
                       "history": [], "settlement": None, "showdown": None, "hands": 0,
-                      "comparison_mode": "deferred"}
+                      "comparison_mode": "deferred", "encounter": None}
+        self.private_opponent = None
         self.journal = []
         self.reviews = {}
 
@@ -75,6 +78,10 @@ class Table:
                                   history=[f'{event["button"]} posts 1 · {event["bb"]} posts 2'])
             elif kind == "played":
                 self.state["history"].append(event["text"])
+                if event["opponent"]:
+                    record_action(self.state["encounter"]["observed"], event)
+            elif kind == "unplayed":
+                self.state["decision"] = {k: event[k] for k in DECISION_FIELDS}
             elif kind == "decision":
                 self.state.update(phase="decision", decision={k: event[k] for k in DECISION_FIELDS},
                                   receipt=None)
@@ -182,14 +189,58 @@ class Table:
                 raise RequestError("Choose a valid comparison mode.")
             if phase not in ("idle", "complete"):
                 raise RequestError("There is already an active session.", 409)
+            selection = body.get("opponent", "starter")
+            seat, watch = body.get("seat_mode", "human"), body.get("watch_mode", "step")
+            if (not isinstance(selection, str) or selection not in (*OPPONENTS, "mystery")
+                    or seat not in ("human", "watch") or watch not in WATCH_MODES):
+                raise RequestError("Choose an available seat, opponent and watch mode.")
             self._reset()
-            self.pipe = self.resources.enter_context(practice_session(hands, position, self.seed))
+            self.private_opponent = select_opponent(selection)
+            self.state["encounter"] = new_encounter(selection, seat, watch)
+            self.pipe = self.resources.enter_context(practice_session(
+                hands, position, self.seed, self.private_opponent, selection == "mystery", seat == "watch"))
             self.state.update(session_id=uuid4().hex, hands=hands, comparison_mode=mode)
             self._advance()
         else:
             if phase == "idle" or body.get("session_id") != self.state["session_id"]:
                 raise RequestError("Session has changed. Refresh the table.", 409)
+            encounter = self.state["encounter"]
+            if operation == "step":
+                decision_id = body.get("id")
+                if encounter["seat_mode"] != "watch" or type(decision_id) is not int:
+                    raise RequestError("Select a pending watch decision.", 409)
+                prediction = body.get("prediction", "")
+                if not isinstance(prediction, str) or len(prediction) > 1000:
+                    raise RequestError("Use a prediction of up to 1000 characters.")
+                prior = self.reviews.get(decision_id)
+                if prior:
+                    if prior["receipt"]["reason"] != prediction:
+                        raise RequestError("This prediction has already been recorded.", 409)
+                    return prior
+                if phase != "decision" or decision_id != self.state["decision"]["id"]:
+                    raise RequestError("This watch decision has already advanced.", 409)
+                chosen = recommend(self.state["decision"])
+                return self._commit({**body, "command":chosen["command"], "reason":prediction})
+            if operation == "watch-mode":
+                pace = body.get("watch_mode")
+                if encounter["seat_mode"] != "watch" or pace not in WATCH_MODES or phase == "complete":
+                    raise RequestError("Choose an available watch mode.")
+                encounter["watch_mode"] = pace
+                return self.state
+            if operation == "read":
+                note, confidence = body.get("note"), body.get("confidence")
+                if not isinstance(note, str) or len(note) > 1000 or confidence not in ("unsure","medium","high"):
+                    raise RequestError("Enter a read of up to 1000 characters and a confidence level.")
+                encounter.update(note=note, confidence=confidence)
+                return self.state
+            if operation == "reveal":
+                if phase != "complete" or encounter["opponent"] != "mystery":
+                    raise RequestError("Finish the mystery encounter before revealing your opponent.", 409)
+                encounter.update(revealed=True, label=OPPONENTS[self.private_opponent])
+                return self.state
             if operation == "commit":
+                if encounter["seat_mode"] == "watch":
+                    raise RequestError("Use the watch controls for the bot seat.", 409)
                 return self._commit(body)
             if operation == "continue":
                 expected = body.get("phase", "review")
@@ -233,7 +284,8 @@ class Handler(BaseHTTPRequestHandler):
             if host not in hosts or self.headers.get("Origin", f"http://{host}") != f"http://{host}":
                 raise RequestError("Local origin required.", 403)
             if post:
-                if self.path not in ("/api/start", "/api/end", "/api/commit", "/api/continue", "/api/analysis", "/api/explain"):
+                if self.path not in ("/api/start", "/api/end", "/api/commit", "/api/continue", "/api/analysis", "/api/explain",
+                                     "/api/step", "/api/watch-mode", "/api/read", "/api/reveal"):
                     raise RequestError("Unknown endpoint.", 404)
                 if self.headers.get_content_type() != "application/json":
                     raise RequestError("JSON required.", 415)
