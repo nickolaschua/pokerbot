@@ -87,7 +87,7 @@ function render() {
   el("pot").textContent= phase==="settled" ? "Pot awarded" : showing ? "Pot "+d.pot : "Pot 0";
   el("street").textContent=phase==="settled" ? "Hand complete" : showing ? streets[d.street] : "Waiting for players";
   el("panel-title").textContent=({idle:"Take a seat",decision:"Your decision",review:"Move committed",settled:"Hand result",complete:"Session complete"})[phase];
-  el("status").textContent=({idle:"Play heads-up against MIT’s check/call starter.",decision:d && (d.call_cost ? d.call_cost+(d.call_cost===1 ? " chip to call." : " chips to call.") : "You can check."),review:"Review your move before revealing the next action.",settled:"Both seats acknowledged the payout.",complete:"Start another session to play again."})[phase];
+  el("status").textContent=({idle:"The MIT starter checks when it can and calls every bet.",decision:d && (d.call_cost ? d.call_cost+(d.call_cost===1 ? " chip to call." : " chips to call.") : "You can check."),review:"Review your move before revealing the next action.",settled:"Both seats acknowledged the payout.",complete:"Start another session to play again."})[phase];
   el("history").replaceChildren();
   for (const line of state.history || []) {
     const li=document.createElement("li"); li.textContent=line; el("history").append(li);
