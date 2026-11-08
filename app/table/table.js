@@ -34,6 +34,16 @@ function choose(value) {
   el("commit").disabled = !move || busy;
 }
 
+function actionLabel(command, decision) {
+  const [action, amount] = command.split(" ");
+  if (action === "raise") {
+    const isRaise = decision.opponent_pip > 0;
+    if (!amount) return isRaise ? "Raise" : "Bet";
+    return isRaise ? "Raise to " + amount : "Bet " + amount;
+  }
+  return {fold:"Fold", check:"Check", call:"Call " + decision.call_cost}[action];
+}
+
 function drawActions(d) {
   const key = state.session_id + "/" + d.id;
   if (decisionKey !== key) {move = ""; el("reason").value = ""; decisionKey = key;}
@@ -41,11 +51,12 @@ function drawActions(d) {
   for (const name of ["fold","check","call","raise"].filter(x => d.legal.includes(x))) {
     const b = document.createElement("button");
     b.type = "button"; b.dataset.move = name;
-    b.textContent = ({fold:"Fold",check:"Check",call:"Call " + d.call_cost,raise:d.call_cost ? "Raise" : "Bet"})[name];
+    b.textContent = actionLabel(name, d);
     b.onclick = () => choose(name);
     el("actions").append(b);
   }
   if (d.bounds) {
+    el("amount-label").textContent = d.opponent_pip > 0 ? "Raise to (chips)" : "Bet amount (chips)";
     const [low,high] = d.bounds;
     Object.assign(el("amount"), {min:String(low), max:String(high), value:String(low)});
     el("presets").replaceChildren();
@@ -67,6 +78,8 @@ function preview() {
     : "Enter a whole number from "+d.bounds[0]+" to "+d.bounds[1]+".";
 }
 
+const chipResult = n => (n > 0 ? "+" : "") + n + (Math.abs(n) === 1 ? " chip" : " chips");
+
 function render() {
   const {phase,decision:d,receipt,settlement} = state;
   const setup = phase === "idle" || phase === "complete";
@@ -87,19 +100,18 @@ function render() {
   el("pot").textContent= phase==="settled" ? "Pot awarded" : showing ? "Pot "+d.pot : "Pot 0";
   el("street").textContent=phase==="settled" ? "Hand complete" : showing ? streets[d.street] : "Waiting for players";
   el("panel-title").textContent=({idle:"Take a seat",decision:"Your decision",review:"Move committed",settled:"Hand result",complete:"Session complete"})[phase];
-  el("status").textContent=({idle:"The MIT starter checks when it can and calls every bet.",decision:d && (d.call_cost ? d.call_cost+(d.call_cost===1 ? " chip to call." : " chips to call.") : "You can check."),review:"Review your move before revealing the next action.",settled:"Both seats acknowledged the payout.",complete:"Start another session to play again."})[phase];
+  el("status").textContent=({idle:"The MIT starter checks when it can and calls every bet.",decision:d && (d.call_cost ? d.call_cost+(d.call_cost===1 ? " chip to call." : " chips to call.") : "You can check."),review:"Review your move before revealing the next action.",settled:"Both seats acknowledged the payout.",complete:settlement && (settlement.hand+" hand"+(settlement.hand===1 ? "" : "s")+" played · "+chipResult(settlement.human_total)+" overall.")})[phase];
   el("history").replaceChildren();
   for (const line of state.history || []) {
     const li=document.createElement("li"); li.textContent=line; el("history").append(li);
   }
   if (phase==="decision") drawActions(d);
   if (phase==="review") {
-    el("receipt").textContent="Your move · "+receipt.command+(receipt.reason ? "\n"+receipt.reason : "");
+    el("receipt").textContent="Your move · "+actionLabel(receipt.command, d)+(receipt.reason ? "\n"+receipt.reason : "");
     el("continue").textContent="Continue";
   }
   if (phase==="settled") {
-    const signed = n => n > 0 ? "+"+n : String(n);
-    el("receipt").textContent="This hand · "+signed(settlement.human_delta)+" chips\nSession · "+signed(settlement.human_total)+" chips";
+    el("receipt").textContent="This hand · "+chipResult(settlement.human_delta)+"\nSession · "+chipResult(settlement.human_total);
     el("continue").textContent=settlement.hand===state.hands ? "Finish session" : "Next hand";
   }
 }
@@ -112,7 +124,9 @@ async function request(path, data) {
     const res=await fetch("/api/"+path,data===undefined ? {cache:"no-store"} : {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
     const body=await res.json();
     if (!res.ok) throw new Error(body.error || "Request failed. Refresh to recover your hand.");
+    const phaseChanged = state.phase !== body.phase;
     state=body; render();
+    if (phaseChanged) el("panel-title").focus();
   } catch (error) {
     el("error").textContent=error.message; el("error").hidden=false;
   } finally {

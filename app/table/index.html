@@ -14,10 +14,10 @@
 <div class="facts"><span>Blinds <b>1 / 2</b></span><span>Starting stack <b>400 chips</b></span></div>
 <details id="history-panel"><summary>Hand history</summary><ol id="history"></ol></details>
 </section>
-<aside><h2 id="panel-title">Take a seat</h2><p id="status" role="status"></p><p id="error" role="alert" hidden></p>
+<aside><h2 id="panel-title" tabindex="-1">Take a seat</h2><p id="status" role="status"></p><p id="error" role="alert" hidden></p>
 <form id="start"><label for="position">Starting position</label><select id="position"><option value="button">Button · small blind</option><option value="bb">Big blind</option></select><label for="hands">Hands to play</label><input id="hands" type="number" min="1" max="100" value="10" required><button class="primary" type="submit">Start session</button></form>
 <form id="play" hidden><fieldset><legend>Your move</legend><div id="actions" class="choices"></div></fieldset>
-<div id="sizing" hidden><label for="amount">Raise to (chips)</label><input id="amount" type="number" step="1"><div class="presets" id="presets"></div><p id="cost"></p></div>
+<div id="sizing" hidden><label id="amount-label" for="amount">Raise to (chips)</label><input id="amount" type="number" step="1"><div class="presets" id="presets"></div><p id="cost"></p></div>
 <label for="reason">Your reasoning <small>(optional)</small></label><textarea id="reason" maxlength="1000" rows="3" placeholder="What do you expect the starter to do?"></textarea>
 <button type="submit" class="primary" id="commit">Commit move</button></form>
 <div id="review" hidden><div id="receipt"></div><button class="primary" id="continue">Continue</button></div>
