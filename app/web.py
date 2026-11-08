@@ -12,6 +12,7 @@ import sys
 from threading import Lock
 from uuid import uuid4
 
+from app import coach
 from app.comparison import compare
 from app.practice import practice_session
 
@@ -21,6 +22,7 @@ FILES = {
     "/": ("index.html", "text/html; charset=utf-8"),
     "/index.html": ("index.html", "text/html; charset=utf-8"),
     "/table.css": ("table.css", "text/css; charset=utf-8"),
+    "/coach.js": ("coach.js", "text/javascript; charset=utf-8"),
     "/table.js": ("table.js", "text/javascript; charset=utf-8"),
 }
 DECISION_FIELDS = ("id", "hand", "position", "street", "hole", "board", "pot",
@@ -144,6 +146,29 @@ class Table:
                 self._reset()
                 raise RequestError("The practice session stopped. Start a new session.", 503)
 
+    def coaching(self, operation, body):
+        if body.get("fixture") == "river":
+            command = body.get("prediction")
+            if command not in ("call", "fold"):
+                raise RequestError("Commit a prediction first.")
+            decision, receipt = coach.RIVER_EXERCISE, {"command": command, "reason": ""}
+        else:
+            snapshot = self.request("state")
+            if not snapshot["session_id"] or body.get("session_id") != snapshot["session_id"]:
+                raise RequestError("Session has changed.", 409)
+            row = next((r for r in snapshot["journal"] if type(body.get("id")) is int
+                        and r["decision"]["id"] == body["id"]), None)
+            if row is None:
+                raise RequestError("This decision is unavailable for review.", 409)
+            decision, receipt = row["decision"], row["receipt"]
+        try:
+            analysis = coach.analyze(decision, body.get("model", "uniform"))
+        except ValueError as exc:
+            raise RequestError(str(exc)) from exc
+        if operation == "analysis":
+            return analysis
+        return coach.explain(analysis, decision, receipt)
+
     def _request(self, operation, body):
         phase = self.state["phase"]
         if operation == "state":
@@ -208,7 +233,7 @@ class Handler(BaseHTTPRequestHandler):
             if host not in hosts or self.headers.get("Origin", f"http://{host}") != f"http://{host}":
                 raise RequestError("Local origin required.", 403)
             if post:
-                if self.path not in ("/api/start", "/api/end", "/api/commit", "/api/continue"):
+                if self.path not in ("/api/start", "/api/end", "/api/commit", "/api/continue", "/api/analysis", "/api/explain"):
                     raise RequestError("Unknown endpoint.", 404)
                 if self.headers.get_content_type() != "application/json":
                     raise RequestError("JSON required.", 415)
@@ -224,7 +249,11 @@ class Handler(BaseHTTPRequestHandler):
                     raise RequestError("Invalid JSON.")
                 if not isinstance(body, dict):
                     raise RequestError("Expected a JSON object.")
-                self._reply(200, self.server.table.request(self.path[5:], body))
+                operation = self.path[5:]
+                if operation in ("analysis", "explain"):
+                    self._reply(200, self.server.table.coaching(operation, body))
+                else:
+                    self._reply(200, self.server.table.request(operation, body))
             elif self.path == "/api/state":
                 self._reply(200, self.server.table.request("state"))
             elif self.path in FILES:
