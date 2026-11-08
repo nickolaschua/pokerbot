@@ -29,7 +29,7 @@ class Observation:
     button_open: bool = False
 
 
-def decide(obs, policy, rng, samples=200, *, explain=False):
+def decide(obs, policy, rng, samples=200, *, explain=False, button_chart=None):
     if policy not in POLICIES:
         raise ValueError("Unknown policy: " + policy)
     passive = "check" if "check" in obs.legal else "call"
@@ -46,10 +46,11 @@ def decide(obs, policy, rng, samples=200, *, explain=False):
     if policy == "king_chart" and obs.button_open:
         ranks = "23456789TJQKA"
         low, high = sorted(obs.hole, key=lambda card: ranks.index(card[0]))
-        if high[0] in BUTTON_OPEN and low[0] != high[0]:
+        chart = BUTTON_OPEN if button_chart is None else button_chart
+        if high[0] in chart and low[0] != high[0]:
             suited = low[1] == high[1]
             column = "suited_min_kicker" if suited else "offsuit_min_kicker"
-            cutoff = BUTTON_OPEN[high[0]][column]
+            cutoff = chart[high[0]][column]
             hand = high[0] + low[0] + ("s" if suited else "o")
             opens = ranks.index(low[0]) >= ranks.index(cutoff)
             detail = {"rule": "button_king_chart", "hand": hand}
