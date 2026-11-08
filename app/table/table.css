@@ -370,3 +370,49 @@ li {
     font-size:25px;
   }
 }
+
+#comparison {
+  border-block: 1px solid var(--edge);
+  margin-block: 16px;
+  padding-block: 16px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+#comparison h3, #comparison p {
+  margin: 0 0 12px;
+}
+
+#spot-picker {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+#spot-select {
+  width: 100%;
+  min-width: 0;
+}
+
+.comparison-moves {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.comparison-moves div {
+  display: grid;
+  padding: 8px 10px;
+  border-left: 2px solid var(--accent);
+  background: #e6ecdf;
+}
+
+#comparison-rule, #policy-source, #spot-context {
+  color: var(--soft);
+  font-size: 13px;
+}
+
+#player-reason {
+  white-space: pre-wrap;
+}

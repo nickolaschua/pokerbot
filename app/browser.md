@@ -14,6 +14,16 @@ Refresh restores a pending decision or committed review while the local server r
 
 For a repeatable demo, add `--seed 22`, start on the button, raise to 5, and check through showdown. K♠ J♣ wins 5 chips on this deal.
 
+## Compare your choices with your bot
+
+Start a ten-hand session and leave comparisons until the end if you want to play without hints. The MIT starter still plays the other seat. Your chart bot sits alongside you: it sees your cards and the same public betting position, but only your move reaches the referee. For immediate feedback, choose to see the comparison after committing. Switch comparison off to practice without recording recommendations.
+
+After the last payout, finish the session to open the review. Start with a disagreement, or pick an agreed decision. Look at what you knew then: your cards, the board, action history, pot and price to call. Compare your reason with the bot’s rule. Two different moves count as a disagreement; two raises count when their totals differ by at least one big blind (2 chips).
+
+For a repeatable example, launch with `--seed 72`, choose the button, play one hand, and raise the opening K5 offsuit to 5 chips. Your current chart folds that hand. The lesson is to ask which assumption about the opponent would justify opening it. The chart is your design choice. Outside chart spots, the policy samples equity against a uniform range. Neither result is a solver verdict or a calculation of the EV of your chosen line.
+
+The journal lives on the local server. Refreshing the browser preserves it. Choosing **End session** early discards the session, including its journal. Starting another session or stopping the server also clears it.
+
 ## Reviewing the change
 
-Look for the session and HTTP tests in `tests/test_web.py`. Run them with `.venv/bin/python -m pytest -q tests/test_web.py` in an environment that permits loopback sockets. The tested milestone covers human commitment, review and Continue. The silent comparison bot and coaching feedback belong to subsequent milestones.
+Look for the session and HTTP tests in `tests/test_web.py`. Run them with `.venv/bin/python -m pytest -q tests/test_web.py` in an environment that permits loopback sockets. Run the comparison checks with `.venv/bin/python -m pytest -q tests/test_comparison.py`. Solver comparisons and EV coaching belong to later milestones.

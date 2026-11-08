@@ -15,7 +15,19 @@
 <details id="history-panel"><summary>Hand history</summary><ol id="history"></ol></details>
 </section>
 <aside><h2 id="panel-title" tabindex="-1">Take a seat</h2><p id="status" role="status"></p><p id="error" role="alert" hidden></p>
-<form id="start"><label for="position">Starting position</label><select id="position"><option value="button">Button · small blind</option><option value="bb">Big blind</option></select><label for="hands">Hands to play</label><input id="hands" type="number" min="1" max="100" value="10" required><button class="primary" type="submit">Start session</button></form>
+<section id="comparison" aria-labelledby="comparison-title" hidden>
+<h3 id="comparison-title">Your bot’s comparison</h3>
+<div id="spot-picker" hidden><label for="spot-select">Review a decision</label><select id="spot-select"></select></div>
+<p id="spot-context"></p>
+<div class="comparison-moves">
+<div><small>Your move</small><strong id="human-choice"></strong></div>
+<div><small>Your bot</small><strong id="bot-choice"></strong></div>
+</div>
+<p id="player-reason"></p><p id="policy-reason"></p>
+<p id="comparison-rule"></p>
+<small id="policy-source"></small>
+</section>
+<form id="start"><label for="position">Starting position</label><select id="position"><option value="button">Button · small blind</option><option value="bb">Big blind</option></select><label for="hands">Hands to play</label><input id="hands" type="number" min="1" max="100" value="10" required><label for="comparison-mode">Compare with my bot</label><select id="comparison-mode"><option value="deferred">After the session</option><option value="immediate">After each commitment</option><option value="off">Off</option></select><button class="primary" type="submit">Start session</button></form>
 <form id="play" hidden><fieldset><legend>Your move</legend><div id="actions" class="choices"></div></fieldset>
 <div id="sizing" hidden><label id="amount-label" for="amount">Raise to (chips)</label><input id="amount" type="number" step="1"><div class="presets" id="presets"></div><p id="cost"></p></div>
 <label for="reason">Your reasoning <small>(optional)</small></label><textarea id="reason" maxlength="1000" rows="3" placeholder="What do you expect the starter to do?"></textarea>

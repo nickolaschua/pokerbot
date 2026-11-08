@@ -80,15 +80,77 @@ function preview() {
 
 const chipResult = n => (n > 0 ? "+" : "") + n + (Math.abs(n) === 1 ? " chip" : " chips");
 
+function comparisonRow() {
+  const rows = state.journal || [];
+  if (state.phase === "review") return rows.find(row => row.decision.id === state.decision.id);
+  if (state.phase !== "complete" || !rows.length) return;
+  const saved = window.history.state;
+  const selected = saved && saved.session === state.session_id ? saved.spot : "";
+  return rows.find(row => String(row.decision.id) === selected) || rows.find(row => row.disagrees) || rows[0];
+}
+
+function describePolicy(diagnostics) {
+  if (diagnostics.rule === "button_king_chart") {
+    const suited = diagnostics.hand.endsWith("s") ? "suited" : "offsuit";
+    return "Your button chart opens " + suited + " kings with a kicker of " +
+      diagnostics.min_kicker + " or higher. You held " + diagnostics.hand + ".";
+  }
+  const pct = value => (value * 100).toFixed(1) + "%";
+  return "The bot estimated " + pct(diagnostics.equity) + " equity against a random hand over " +
+    diagnostics.samples + " simulated deals. " +
+    (diagnostics.pot_odds ? "The call needed " + pct(diagnostics.pot_odds) + " equity on pot odds alone." : "Checking cost no chips.") +
+    (diagnostics.decision_rule ? " " + diagnostics.decision_rule : "");
+}
+
+function drawComparison(row) {
+  const section = el("comparison");
+  section.hidden = !row;
+  if (!row) {
+    el("spot-select").replaceChildren();
+    return;
+  }
+  const {decision, receipt, recommendation, disagrees} = row;
+  const finished = state.phase === "complete";
+  const picker = el("spot-select");
+  el("spot-picker").hidden = !finished;
+  if (finished && !picker.options.length) {
+    for (const entry of state.journal) {
+      const spot = entry.decision;
+      const title = "Hand " + spot.hand + " · " + streets[spot.street] + " · " +
+        (entry.disagrees ? "Different" : "Agreed") + " (#" + spot.id + ")";
+      picker.add(new Option(title, String(spot.id)));
+    }
+  }
+  if (finished) picker.value = String(decision.id);
+  const labels = values => values.map(card => (card[0] === "T" ? "10" : card[0]) + suits[card[1]]).join(" ");
+  const seat = decision.position === "button" ? "Button" : "Big blind";
+  el("spot-context").textContent = "Hand " + decision.hand + " · " + seat + " · " + labels(decision.hole) +
+    " · " + (decision.board.length ? streets[decision.street] + " " + labels(decision.board) : "Preflop") +
+    " · Pot " + decision.pot + " · " + decision.call_cost + " to call";
+  el("human-choice").textContent = actionLabel(receipt.command, decision);
+  el("bot-choice").textContent = actionLabel(recommendation.command, decision);
+  el("player-reason").textContent = receipt.reason ? "Your reasoning · " + receipt.reason : "You left your reasoning blank.";
+  el("policy-reason").textContent = describePolicy(recommendation.diagnostics);
+  const result = disagrees ? "Different choices." : "Agreed within the sizing threshold.";
+  el("comparison-rule").textContent = result + " Sizes differing by at least 1 big blind (2 chips) count as different.";
+  el("policy-source").textContent = "Local policy · King chart " + recommendation.chart_version;
+  el("comparison-title").textContent = finished && !state.journal.some(entry => entry.disagrees)
+    ? "You and your bot agreed throughout" : "Your bot’s comparison";
+}
+
 function render() {
-  const {phase,decision:d,receipt,settlement} = state;
+  const {phase,receipt,settlement} = state;
+  const row = comparisonRow();
+  const replay = phase === "complete" && row;
+  const d = replay ? row.decision : state.decision;
+  drawComparison(row);
   const setup = phase === "idle" || phase === "complete";
   el("start").hidden=!setup;
   el("play").hidden=phase!=="decision";
   el("review").hidden=phase!=="review" && phase!=="settled";
   el("end").hidden=setup;
   el("hand-count").textContent = d ? "Hand "+d.hand+" / "+state.hands : "";
-  const showing = d && !setup;
+  const showing = d && (!setup || replay);
   cards("hole",showing ? d.hole : [],2,!showing);
   cards("board",showing ? d.board : [],5);
   const exposed = phase==="settled" && state.showdown ? state.showdown.split(",") : [];
@@ -101,8 +163,9 @@ function render() {
   el("street").textContent=phase==="settled" ? "Hand complete" : showing ? streets[d.street] : "Waiting for players";
   el("panel-title").textContent=({idle:"Take a seat",decision:"Your decision",review:"Move committed",settled:"Hand result",complete:"Session complete"})[phase];
   el("status").textContent=({idle:"The MIT starter checks when it can and calls every bet.",decision:d && (d.call_cost ? d.call_cost+(d.call_cost===1 ? " chip to call." : " chips to call.") : "You can check."),review:"Review your move before revealing the next action.",settled:"Both seats acknowledged the payout.",complete:settlement && (settlement.hand+" hand"+(settlement.hand===1 ? "" : "s")+" played · "+chipResult(settlement.human_total)+" overall.")})[phase];
+  el("receipt").hidden = phase === "review" && Boolean(row);
   el("history").replaceChildren();
-  for (const line of state.history || []) {
+  for (const line of (replay ? row.history : state.history) || []) {
     const li=document.createElement("li"); li.textContent=line; el("history").append(li);
   }
   if (phase==="decision") drawActions(d);
@@ -135,7 +198,11 @@ async function request(path, data) {
   }
 }
 
-el("start").onsubmit=e=>{e.preventDefault();request("start",{hands:Number(el("hands").value),position:el("position").value});};
+el("start").onsubmit=e=>{e.preventDefault();request("start",{hands:Number(el("hands").value),position:el("position").value,comparison_mode:el("comparison-mode").value});};
+el("spot-select").onchange = () => {
+  window.history.replaceState({session:state.session_id, spot:el("spot-select").value}, "");
+  render();
+};
 el("amount").oninput=preview;
 el("play").onsubmit=e=>{
   e.preventDefault(); if (!move) return;
