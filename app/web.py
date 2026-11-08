@@ -12,6 +12,7 @@ import sys
 from threading import Lock
 from uuid import uuid4
 
+from app.comparison import compare
 from app.practice import practice_session
 
 
@@ -45,7 +46,9 @@ class Table:
     def _reset(self):
         self.pipe = None
         self.state = {"phase": "idle", "session_id": None, "decision": None, "receipt": None,
-                      "history": [], "settlement": None, "showdown": None, "hands": 0}
+                      "history": [], "settlement": None, "showdown": None, "hands": 0,
+                      "comparison_mode": "deferred"}
+        self.journal = []
         self.reviews = {}
 
     def close(self):
@@ -114,6 +117,10 @@ class Table:
             raise RequestError(reply["reason"], 422)
         if reply["type"] != "committed" or reply["id"] != decision_id:
             raise RuntimeError("unexpected action receipt")
+        if self.state["comparison_mode"] != "off":
+            row = compare(self.state["decision"], receipt)
+            row["history"] = self.state["history"].copy()
+            self.journal.append(row)
         self.state.update(phase="review", receipt=receipt)
         # The worker may already have emitted the opponent's reply. Read it
         # only after Continue so refresh and exact retries show the locked spot.
@@ -123,7 +130,15 @@ class Table:
     def request(self, operation, body=None):
         with self.lock:
             try:
-                return deepcopy(self._request(operation, body or {}))
+                snapshot = self._request(operation, body or {})
+                visible = []
+                if snapshot["phase"] == "complete":
+                    visible = self.journal
+                elif snapshot["comparison_mode"] == "immediate" and snapshot["decision"]:
+                    # A replayed receipt exposes only decisions committed at that point.
+                    last_id = snapshot["decision"]["id"]
+                    visible = [row for row in self.journal if row["receipt"]["id"] <= last_id]
+                return deepcopy({**snapshot, "journal": visible})
             except (EOFError, OSError, RuntimeError):
                 self.resources.close()
                 self._reset()
@@ -137,11 +152,14 @@ class Table:
             hands, position = body.get("hands"), body.get("position")
             if type(hands) is not int or not 1 <= hands <= 1000 or position not in ("button", "bb"):
                 raise RequestError("Choose 1–1000 hands and a starting seat.")
+            mode = body.get("comparison_mode", "deferred")
+            if mode not in ("deferred", "immediate", "off"):
+                raise RequestError("Choose a valid comparison mode.")
             if phase not in ("idle", "complete"):
                 raise RequestError("There is already an active session.", 409)
             self._reset()
             self.pipe = self.resources.enter_context(practice_session(hands, position, self.seed))
-            self.state.update(session_id=uuid4().hex, hands=hands)
+            self.state.update(session_id=uuid4().hex, hands=hands, comparison_mode=mode)
             self._advance()
         else:
             if phase == "idle" or body.get("session_id") != self.state["session_id"]:

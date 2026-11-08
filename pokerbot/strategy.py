@@ -29,7 +29,7 @@ class Observation:
     button_open: bool = False
 
 
-def decide(obs, policy, rng, samples=200):
+def decide(obs, policy, rng, samples=200, *, explain=False):
     if policy not in POLICIES:
         raise ValueError("Unknown policy: " + policy)
     passive = "check" if "check" in obs.legal else "call"
@@ -58,13 +58,28 @@ def decide(obs, policy, rng, samples=200):
     equity = estimate_equity(obs.hole, obs.board, samples, rng)
     threshold = required_equity(obs.pot, obs.call_cost)
     detail = {"equity": equity, "pot_odds": threshold, "samples": samples}
-    if equity >= 0.65 and "raise" in obs.legal:
+    value_threshold = 0.65
+    if equity >= value_threshold and "raise" in obs.legal:
         low, high = obs.raise_bounds
         # MIT expects total contribution THIS STREET, not additional chips.
         target = obs.my_pip + obs.call_cost + max(2, (obs.pot + obs.call_cost) // 2)
-        return "raise", min(high, max(low, target)), detail
+        amount = min(high, max(low, target))
+        if explain:
+            detail["decision_rule"] = (
+                f"Equity reached the {value_threshold:.0%} value threshold. "
+                f"The half-pot sizing rule targeted {target} chips total and the legal size is {amount}."
+            )
+        return "raise", amount, detail
     if "check" in obs.legal:
+        if explain:
+            detail["decision_rule"] = "The value-bet rule did not trigger and checking costs no chips."
         return "check", None, detail
-    if equity >= threshold + 0.05:
-        return "call", None, detail
-    return "fold", None, detail
+    call_threshold = threshold + 0.05
+    action = "call" if equity >= call_threshold else "fold"
+    if explain:
+        comparison = "reached" if action == "call" else "fell below"
+        detail["decision_rule"] = (
+            f"Equity {comparison} the {call_threshold:.1%} call threshold "
+            "(pot odds plus five percentage points)."
+        )
+    return action, None, detail
