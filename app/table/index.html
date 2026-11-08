@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Poker Practice</title><link rel="stylesheet" href="/table.css"><script defer src="/coach.js"></script><script defer src="/encounter.js"></script><script defer src="/replay.js"></script><script defer src="/table.js"></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Poker Practice</title><link rel="stylesheet" href="/table.css"><script defer src="/coach.js"></script><script defer src="/encounter.js"></script><script defer src="/reference.js"></script><script defer src="/replay.js"></script><script defer src="/table.js"></script></head>
 <body>
 <header><div class="mast"><span class="brand-suit" aria-hidden="true">♠</span><h1>Poker Practice</h1></div><span class="format">Heads-up <i>·</i> No-limit Hold’em</span></header>
 <main>
@@ -40,6 +40,14 @@
 <button type="button" id="ask-coach">Explain this decision</button>
 <p id="coach-text" role="status"></p></div>
 </section>
+<section id="reference-panel" hidden>
+<details id="reference-drill"><summary>Equilibrium river exercise</summary>
+<label for="reference-variant">River spot</label><select id="reference-variant"><option value="covered">Half-pot jam</option><option value="size">Smaller bet</option><option value="stack">Deeper stacks</option><option value="history">Different betting line</option></select>
+<p id="reference-situation"></p><div class="choices"><button id="reference-call" type="button">I would call</button><button id="reference-fold" type="button">I would fold</button></div></details>
+<button id="reference-live" type="button" hidden>Check equilibrium coverage</button>
+<div id="reference-review" hidden><h3 id="reference-heading" tabindex="-1">Reference review</h3>
+<label for="reference-range">Assumed opponent range before the bet</label><select id="reference-range"><option value="equal_polar">Equal value and bluff holdings</option><option value="uniform">All legal holdings</option></select>
+<div id="reference-output" role="status"></div><a id="reference-source" hidden target="_blank" rel="noopener noreferrer"></a></div></section>
 <form id="start"><label for="opponent">Opponent</label><select id="opponent"><option value="starter">MIT starter</option><option value="equity">Equity bot</option><option value="random">Random bot</option><option value="check_fold">Check/fold bot</option><option value="mystery">Mystery opponent</option></select>
 <label for="seat-mode">Your seat</label><select id="seat-mode"><option value="human">Play my hand</option><option value="watch">Watch my chart bot</option></select>
 <div id="watch-setup" hidden><label for="watch-mode">Watch pace</label><select id="watch-mode"><option value="step">Step each decision</option><option value="continuous">Continuous</option><option value="river_raise">Pause at a river raise</option></select></div>
@@ -60,6 +68,7 @@
 <p id="library-status" role="status"></p>
 <div id="library-editor" hidden>
 <label for="bookmark-select">Saved spot</label><select id="bookmark-select"></select>
+<button id="reference-bookmark" type="button">Check saved spot coverage</button>
 <p id="saved-context"></p><p id="saved-reason"></p><p id="saved-history"></p>
 <label for="replay-cutoff">Trial offsuit king cutoff</label><select id="replay-cutoff"></select>
 <label id="alternate-label" for="replay-action">Compare my original move with</label><select id="replay-action"></select>

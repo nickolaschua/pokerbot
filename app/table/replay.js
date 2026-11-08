@@ -26,6 +26,7 @@ const setReplaySpot = (() => {
     return row.seat_mode ? row.seat_mode === "watch" : row.history.some(line => line.includes("Your bot posts "));
   }
   function showRecord() {
+    clearSavedReference();
     clearTrial();
     const item = selected();
     if (!item) return;

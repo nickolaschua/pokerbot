@@ -144,6 +144,7 @@ function render() {
   const replay = phase === "complete" && row;
   const d = replay ? row.decision : state.decision;
   drawComparison(row);
+  setReferenceSpot(state, row);
   setCoachSpot(state, row);
   const setup = phase === "idle" || phase === "complete";
   el("start").hidden=!setup;
