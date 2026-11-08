@@ -185,8 +185,17 @@ async function request(path, data) {
   document.querySelectorAll("button").forEach(b=>b.disabled=true);
   try {
     const res=await fetch("/api/"+path,data===undefined ? {cache:"no-store"} : {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
-    const body=await res.json();
-    if (!res.ok) throw new Error(body.error || "Request failed. Refresh to recover your hand.");
+    let body=await res.json();
+    if (res.status === 409) {
+      const conflict = body.error;
+      const current = await fetch("/api/state", {cache:"no-store"});
+      if (!current.ok) throw new Error("The table changed. Refresh to recover your hand.");
+      body = await current.json();
+      el("error").textContent = conflict + " Showing the current table.";
+      el("error").hidden = false;
+    } else if (!res.ok) {
+      throw new Error(body.error || "Request failed. Refresh to recover your hand.");
+    }
     const phaseChanged = state.phase !== body.phase;
     state=body; render();
     if (phaseChanged) el("panel-title").focus();
@@ -206,7 +215,7 @@ el("spot-select").onchange = () => {
 el("amount").oninput=preview;
 el("play").onsubmit=e=>{
   e.preventDefault(); if (!move) return;
-  const command=move==="raise" ? "raise "+el("amount").value : move;
+  const command=move==="raise" ? "raise "+el("amount").valueAsNumber : move;
   request("commit",{session_id:state.session_id,id:state.decision.id,command,reason:el("reason").value.trim()});
 };
 el("continue").onclick=()=>request("continue",{session_id:state.session_id,id:state.decision.id,phase:state.phase});
