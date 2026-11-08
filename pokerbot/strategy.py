@@ -3,12 +3,18 @@
 Only the adapter imports MIT's types. This is intentionally a weak teaching
 baseline: uniform opponent ranges, no search, no deliberate bluffing.
 """
+import csv
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional, Tuple
 
 from pokerbot.equity import estimate_equity, required_equity
 
-POLICIES = ("equity", "check_call", "check_fold", "random")
+POLICIES = ("equity", "check_call", "check_fold", "random", "king_chart")
+
+
+with (Path(__file__).parent / "charts" / "button_open_2_5bb.csv").open(newline="") as chart:
+    BUTTON_OPEN = {row["high_card"]: row for row in csv.DictReader(chart)}
 
 
 @dataclass(frozen=True)
@@ -20,6 +26,7 @@ class Observation:
     my_pip: int
     legal: frozenset
     raise_bounds: Optional[Tuple[int, int]] = None
+    button_open: bool = False
 
 
 def decide(obs, policy, rng, samples=200):
@@ -35,6 +42,18 @@ def decide(obs, policy, rng, samples=200):
         action = rng.choice(sorted(obs.legal))
         amount = obs.raise_bounds[0] if action == "raise" else None
         return action, amount, {}
+
+    if policy == "king_chart" and obs.button_open:
+        ranks = "23456789TJQKA"
+        low, high = sorted(obs.hole, key=lambda card: ranks.index(card[0]))
+        if high[0] in BUTTON_OPEN and low[0] != high[0]:
+            suited = low[1] == high[1]
+            column = "suited_min_kicker" if suited else "offsuit_min_kicker"
+            cutoff = BUTTON_OPEN[high[0]][column]
+            hand = high[0] + low[0] + ("s" if suited else "o")
+            opens = ranks.index(low[0]) >= ranks.index(cutoff)
+            detail = {"rule": "button_king_chart", "hand": hand}
+            return ("raise", 5, detail) if opens else ("fold", None, detail)
 
     equity = estimate_equity(obs.hole, obs.board, samples, rng)
     threshold = required_equity(obs.pot, obs.call_cost)
